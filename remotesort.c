@@ -70,23 +70,6 @@ main(int argc, char** argv)
 				t[1]=epfd;
 				pool_add_work(deal_with_client, t);
 			}
-			/*else if( event[i].events & EPOLLOUT)
-			{
-				ev.data.fd=tfd;
-				ev.events=EPOLLOUT 
-				epoll_ctl(epfd, EPOLL_CTL_DEL, tfd, &ev);
-			}*/
-
-			/*
-			if( events[i].events & EPOLLIN)
-			{
-				//  the clients send data
-			}
-			if( events[i].events & EPOLLOUT)
-			{
-				//  send message to clients
-			}
-			*/
 			
 		}
 	}
@@ -132,10 +115,6 @@ deal_with_client(void *arg)
 	close(fd);
 	return;
 
-	//write(fd, buf, strlen(buf));
-	//  login();
-	//  sort();
-	//  writeback();	
 }
 int *
 transfer(char *c, int *s, int len, int *l)
