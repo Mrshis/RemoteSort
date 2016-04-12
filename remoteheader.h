@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
+#include <assert.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <sys/epoll.h>
@@ -47,3 +49,6 @@ void destroy_pool();
 void *deal_with_client(void *arg);
 void quick_sort(int *, int, int);
 int  *transfer(char *, int *, int, int*);
+int  string_to_inter(char*, int);
+void sig_int(int);
+void inter_to_string(int, char*, int);
