@@ -18,6 +18,7 @@ main(int argc, char** argv)
 	socklen_t clilen;
 	struct sockaddr_in servaddr, cliaddr;
 	char buff[MAXLINE];
+	int e;
 
 	listenfd=socket(AF_INET, SOCK_STREAM, 0);
 	setnoblock(listenfd);// set the fd noblock
@@ -25,7 +26,12 @@ main(int argc, char** argv)
 	servaddr.sin_family=AF_INET;
 	servaddr.sin_port=htons(PORT);
 	inet_pton(AF_INET, ADDR, &servaddr.sin_addr);
-	bind(listenfd, (struct sockaddr*)&servaddr, sizeof(servaddr));
+	e=bind(listenfd, (struct sockaddr*)&servaddr, sizeof(servaddr));
+	if( e==-1)
+	{
+		perror("bind error");
+		return;
+	}
 	listen(listenfd, LISTENQ);
 
 	epfd=epoll_create(5000);
@@ -33,7 +39,12 @@ main(int argc, char** argv)
 	ev.events=EPOLLIN | EPOLLET;
 	epoll_ctl(epfd, EPOLL_CTL_ADD, listenfd, &ev);
 
-	pool_init(20);
+	ev.data.fd=SIGINT;
+	ev.events=EPOLLIN;
+	epoll_ctl(epfd, EPOLL_CTL_ADD, SIGINT, &ev);
+
+
+	pool_init(8);
 
 	for( ;;)
 	{
@@ -51,17 +62,20 @@ main(int argc, char** argv)
 					ev.events=EPOLLIN | EPOLLET;
 					epoll_ctl(epfd, EPOLL_CTL_ADD, confd, &ev);
 					
-					//  now send the fd to thread pool			
-					//  pool_add_work(deal_with_client, (void*)fd);
-
 				}
 				if( confd==-1)
 				{
 					if( confd!=EAGAIN && errno!=ECONNABORTED && errno!=EPROTO && errno!=EINTR)
-					perror("accept error");
+						perror("accept error");
 				}
 				continue;// if the fd==listenfd , and there is no need to check next
 
+			}
+			else if( tfd==SIGINT)
+			{
+				perror("Received signal SIGIN");
+				destroy_pool();
+				return;
 			}
 			else if( events[i].events & EPOLLIN)
 			{
@@ -96,19 +110,21 @@ deal_with_client(void *arg)
 	ev.data.fd=fd;
 	ev.events=EPOLLIN;
 
-	read(fd, buf, sizeof(buf));
+	l=read(fd, buf, sizeof(buf));
 
 
-	transfer(buf, data, sizeof(buf), &l);
+	transfer(buf, data, l, &l);
 	quick_sort(data, 0, l);
 	bzero(buf, sizeof(buf));
-	for( i=0; i<l; i++)
+	for( i=0; i<=l; i++)
 	{
 		char tmp[8];
-		itoa(data[i], tmp, 10);
+		bzero(tmp, 8);
+		inter_to_string(data[i], tmp, 8);
 		strcat(buf, tmp);
+		strcat(buf, ",");
 	}
-	write(fd, buf, strlen(buf));
+	write(fd, buf, strlen(buf)-1);
 
 	epoll_ctl(epfd, EPOLL_CTL_DEL, fd, &ev);
 
@@ -128,10 +144,12 @@ transfer(char *c, int *s, int len, int *l)
 		{
 			s[k++]=atoi(temp);
 			j=0;
+			bzero(temp, 8);
 			continue;
 		}
 		temp[j++]=c[i];		
 	}
+	s[k]=atoi(temp);
 	*l=k;
 	return s;
 }
@@ -154,9 +172,14 @@ quick_sort(int *s, int left, int right)
 			s[high]=s[low];
 		}
 		s[low]=key;
-		show(s, 12);
-
 		quick_sort(s, left, low-1);
 		quick_sort(s, low+1, right);
 	}
+}
+
+void
+inter_to_string(int num, char *s, int len)
+{
+	sprintf(s, "%d", num);
+	return;
 }
