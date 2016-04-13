@@ -29,20 +29,18 @@ pool_init(int max_thread_num)
 void *
 thread_routine(void *arg)
 {
-	printf("pthread %d start ", pthread_self());
 	while( 1)
 	{
 		pthread_mutex_lock(&(pool->queue_lock));
-		while( pool->cur_queue_size==0 && !pool->shutdown)
+		while( pool->cur_queue_size==0 && !pool->shutdown)// pthread_cond_signal() may wake up more than one thread
 			pthread_cond_wait(&(pool->queue_ready), &(pool->queue_lock));
 
 		if( pool->shutdown)
 		{
 			pthread_mutex_unlock(&(pool->queue_lock));
-			printf("thread %d exit", pthread_self());
+			printf("thread %d exit\n", pthread_self());
 			pthread_exit(NULL);
 		}
-		printf("thread %d start work", pthread_self());
 
 		pool->cur_queue_size--;
 

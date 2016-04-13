@@ -138,8 +138,10 @@ transfer(char *c, int *s, int len, int *l)
 	char temp[8];
 	int i=0;
 	int j=0, k=0;
-	for( i=0; i<len;i ++)
+	for( i=0; i<len; i++)
 	{
+		if( c[i]==' ')
+			continue;
 		if( c[i]==',')
 		{
 			s[k++]=atoi(temp);
