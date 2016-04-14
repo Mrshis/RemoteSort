@@ -43,6 +43,10 @@ main(int argc, char** argv)
 	ev.events=EPOLLIN;
 	epoll_ctl(epfd, EPOLL_CTL_ADD, SIGINT, &ev);
 
+	ev.data.fd=STDIN_FILENO;
+	ev.events=EPOLLIN;
+	epoll_ctl(epfd, EPOLL_CTL_ADD, STDIN_FILENO, &ev);
+
 
 	pool_init(8);
 
@@ -73,9 +77,14 @@ main(int argc, char** argv)
 			}
 			else if( tfd==SIGINT)
 			{
-				perror("Received signal SIGIN");
+				perror("Received signal SIGINT");
 				destroy_pool();
 				return;
+			}
+			else if( tfd==STDIN_FILENO)
+			{
+				while( (e=read(STDIN_FILENO, buff, MAXLINE))!=0)
+					write(STDOUT_FILENO, buff, e);
 			}
 			else if( events[i].events & EPOLLIN)
 			{
