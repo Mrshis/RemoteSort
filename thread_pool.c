@@ -89,7 +89,7 @@ destroy_pool()
 	pthread_cond_broadcast(&(pool->queue_ready));
 	
 	int i;
-	for( i=0; i<pool->max_thread_num; i++)
+	for( i=0; i<pool->max_thread_num; i++)// wait for all threads exiting
 		pthread_join(pool->threadid[i], NULL);
 	free(pool->threadid);
 	thread_worker *head=NULL;
@@ -102,7 +102,6 @@ destroy_pool()
 	pthread_mutex_destroy(&(pool->queue_lock));
 	pthread_cond_destroy(&(pool->queue_ready));
 	free(pool);
-	pool=NULL;
 
 	return;
 }
