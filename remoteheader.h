@@ -37,7 +37,6 @@ typedef struct
 	int shutdown;
 	int max_thread_num;
 	int cur_queue_size;
-
 }thread_pool;
 
 
